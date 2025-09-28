@@ -7,49 +7,36 @@ stages:
     outs:
       - data/interim/clean.csv
 
-  features:
+  feature_engineering:
     cmd: python -m src.feature_engineering --in data/interim/clean.csv --out data/processed/features.parquet
     deps:
       - src/feature_engineering.py
       - data/interim/clean.csv
-      - params.yaml
     outs:
       - data/processed/features.parquet
 
-  train_regression:
-    cmd: python -m src.train_regression --in data/processed/features.parquet --out models/regression.pkl --metrics metrics/regression.json
+  Predictive_modelling:
+    # Runs both sklearn models (regression + classification)
+    cmd: >
+      python -m src.train_regression --in data/processed/features.parquet --out models/regression.pkl --metrics metrics/regression.json
+      && python -m src.train_classification --in data/processed/features.parquet --out models/classifier.pkl --metrics metrics/classification.json
     deps:
       - src/train_regression.py
-      - data/processed/features.parquet
-      - params.yaml
-    outs:
-      - models/regression.pkl
-    metrics:
-      - metrics/regression.json
-
-  train_classification:
-    cmd: python -m src.train_classification --in data/processed/features.parquet --out models/classifier.pkl --metrics metrics/classification.json
-    deps:
       - src/train_classification.py
       - data/processed/features.parquet
-      - params.yaml
     outs:
-      - models/classifier.pkl
-    metrics:
-      - metrics/classification.json
-
-  evaluate:
-    cmd: python -m src.evaluate --data data/processed/features.parquet --reg models/regression.pkl --clf models/classifier.pkl --out metrics/summary.json --figdir reports/figures
-    deps:
-      - src/evaluate.py
       - models/regression.pkl
       - models/classifier.pkl
-      - data/processed/features.parquet
-      - params.yaml
     metrics:
-      - metrics/summary.json
-    plots:
-      - reports/figures/regression_residuals.png:
-          cache: false
-      - reports/figures/classification_roc.png:
-          cache: false
+      - metrics/regression.json
+      - metrics/classification.json
+
+  PySpark:
+    # If your src/PySpark.py already runs and prints metrics, great.
+    # Here we ask it to write a JSON we can track as a metric.
+    cmd: python -m src.PySpark --in data/processed/features.parquet --out metrics/pyspark.json
+    deps:
+      - src/PySpark.py
+      - data/processed/features.parquet
+    metrics:
+      - metrics/pyspark.json
