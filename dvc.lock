@@ -1,0 +1,192 @@
+schema: '2.0'
+stages:
+  preprocess:
+    cmd: python -m src.preprocess --in data/raw/restaurants.csv --out data/interim/clean.csv
+    deps:
+    - path: data/raw/restaurants.csv
+      hash: md5
+      md5: 6bb696eac5889d15f134cee5ff09eb5d
+      size: 2690897
+    - path: src/preprocess.py
+      hash: md5
+      md5: 135fc24813a62bb59de966a725f0e18a
+      size: 2475
+    outs:
+    - path: data/interim/clean.csv
+      hash: md5
+      md5: aa14e6d607f540c053743286e5046366
+      size: 2758287
+  features:
+    cmd: python -m src.feature_engineering --in data/interim/clean.csv --out data/processed/features.parquet
+    deps:
+    - path: data/interim/clean.csv
+      hash: md5
+      md5: 4312ff2b1ae25e2171b7ea890f757917
+      size: 2716602
+    - path: params.yaml
+      hash: md5
+      md5: b7a4b0b73ea5659a111c78096605dcac
+      size: 192
+    - path: src/feature_engineering.py
+      hash: md5
+      md5: 6a7683986a66329c9b40be0a828be951
+      size: 320
+    outs:
+    - path: data/processed/features.parquet
+      hash: md5
+      md5: 12ec6218d4a8708555e98b26f33d870f
+      size: 976403
+  train_regression:
+    cmd: python -m src.train_regression --in data/processed/features.parquet --out
+      models/regression.pkl --metrics metrics/regression.json
+    deps:
+    - path: data/processed/features.parquet
+      hash: md5
+      md5: 12ec6218d4a8708555e98b26f33d870f
+      size: 976403
+    - path: params.yaml
+      hash: md5
+      md5: b7a4b0b73ea5659a111c78096605dcac
+      size: 192
+    - path: src/train_regression.py
+      hash: md5
+      md5: e0250e254e00cadc503486a979e95bd4
+      size: 1458
+    outs:
+    - path: metrics/regression.json
+      hash: md5
+      md5: 84530e730cb720406059928fa0cd54e2
+      size: 60
+    - path: models/regression.pkl
+      hash: md5
+      md5: d41d8cd98f00b204e9800998ecf8427e
+      size: 0
+  train_classification:
+    cmd: python -m src.train_classification --in data/processed/features.parquet --out
+      models/classifier.pkl --metrics metrics/classification.json
+    deps:
+    - path: data/processed/features.parquet
+      hash: md5
+      md5: 12ec6218d4a8708555e98b26f33d870f
+      size: 976403
+    - path: params.yaml
+      hash: md5
+      md5: b7a4b0b73ea5659a111c78096605dcac
+      size: 192
+    - path: src/train_classification.py
+      hash: md5
+      md5: fb0406ce4526c115d2b56f8cafd762ed
+      size: 1946
+    outs:
+    - path: metrics/classification.json
+      hash: md5
+      md5: 2e44b34a649d14acb82f5c7247d9cbf0
+      size: 131
+    - path: models/classifier.pkl
+      hash: md5
+      md5: d41d8cd98f00b204e9800998ecf8427e
+      size: 0
+  evaluate:
+    cmd: python -m src.evaluate --data data/processed/features.parquet --reg models/regression.pkl
+      --clf models/classifier.pkl --out metrics/summary.json --figdir reports/figures
+    deps:
+    - path: data/processed/features.parquet
+      hash: md5
+      md5: 12ec6218d4a8708555e98b26f33d870f
+      size: 976403
+    - path: models/classifier.pkl
+      hash: md5
+      md5: d41d8cd98f00b204e9800998ecf8427e
+      size: 0
+    - path: models/regression.pkl
+      hash: md5
+      md5: d41d8cd98f00b204e9800998ecf8427e
+      size: 0
+    - path: params.yaml
+      hash: md5
+      md5: b7a4b0b73ea5659a111c78096605dcac
+      size: 192
+    - path: src/evaluate.py
+      hash: md5
+      md5: b18e61927aa5faf01e9c8ea0f2559c8f
+      size: 657
+    outs:
+    - path: metrics/summary.json
+      hash: md5
+      md5: 313059f83bfe05e03810e9f8ae6c13fc
+      size: 40
+    - path: reports/figures/classification_roc.png
+      hash: md5
+      md5: d41d8cd98f00b204e9800998ecf8427e
+      size: 0
+    - path: reports/figures/regression_residuals.png
+      hash: md5
+      md5: d41d8cd98f00b204e9800998ecf8427e
+      size: 0
+  feature_engineering:
+    cmd: python -m src.feature_engineering --in data/interim/clean.csv --out data/processed/features.parquet
+    deps:
+    - path: data/interim/clean.csv
+      hash: md5
+      md5: aa14e6d607f540c053743286e5046366
+      size: 2758287
+    - path: src/feature_engineering.py
+      hash: md5
+      md5: f83ea610f62f66314293b84b9fa5159f
+      size: 4431
+    outs:
+    - path: data/processed/features.parquet
+      hash: md5
+      md5: 409cd0ad8c5437086969ff63622fb5cc
+      size: 1544713
+  Predictive_modelling:
+    cmd: "python -m src.train_regression --in data/processed/features.parquet --out\
+      \ models/regression.pkl --metrics metrics/regression.json && python -m src.train_classification\
+      \ --in data/processed/features.parquet --out models/classifier.pkl --metrics\
+      \ metrics/classification.json\n"
+    deps:
+    - path: data/processed/features.parquet
+      hash: md5
+      md5: 409cd0ad8c5437086969ff63622fb5cc
+      size: 1544713
+    - path: src/train_classification.py
+      hash: md5
+      md5: ba8f073a7ab16a2ac49f9c5b394972fb
+      size: 1952
+    - path: src/train_regression.py
+      hash: md5
+      md5: 8d0e4512474f3166aa2dfdf3635cded2
+      size: 1460
+    outs:
+    - path: metrics/classification.json
+      hash: md5
+      md5: f5031fe053d55c2f6943518881a70295
+      size: 130
+    - path: metrics/regression.json
+      hash: md5
+      md5: bcf9f210188beab0674a0a39766bd8a0
+      size: 59
+    - path: models/classifier.pkl
+      hash: md5
+      md5: d41d8cd98f00b204e9800998ecf8427e
+      size: 0
+    - path: models/regression.pkl
+      hash: md5
+      md5: d41d8cd98f00b204e9800998ecf8427e
+      size: 0
+  PySpark:
+    cmd: python -m src.PySpark --in data/processed/features.parquet --out metrics/pyspark.json
+    deps:
+    - path: data/processed/features.parquet
+      hash: md5
+      md5: 409cd0ad8c5437086969ff63622fb5cc
+      size: 1544713
+    - path: src/PySpark.py
+      hash: md5
+      md5: 943ba4e1502dfd43d503ffb6ad783965
+      size: 5426
+    outs:
+    - path: metrics/pyspark.json
+      hash: md5
+      md5: fdeebd314b01710c2d0aa681a7436f94
+      size: 302
