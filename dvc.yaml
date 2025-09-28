@@ -1,0 +1,55 @@
+stages:
+  preprocess:
+    cmd: python -m src.preprocess --in data/raw/restaurants.csv --out data/interim/clean.csv
+    deps:
+      - src/preprocess.py
+      - data/raw/restaurants.csv
+    outs:
+      - data/interim/clean.csv
+
+  features:
+    cmd: python -m src.feature_engineering --in data/interim/clean.csv --out data/processed/features.parquet
+    deps:
+      - src/feature_engineering.py
+      - data/interim/clean.csv
+      - params.yaml
+    outs:
+      - data/processed/features.parquet
+
+  train_regression:
+    cmd: python -m src.train_regression --in data/processed/features.parquet --out models/regression.pkl --metrics metrics/regression.json
+    deps:
+      - src/train_regression.py
+      - data/processed/features.parquet
+      - params.yaml
+    outs:
+      - models/regression.pkl
+    metrics:
+      - metrics/regression.json
+
+  train_classification:
+    cmd: python -m src.train_classification --in data/processed/features.parquet --out models/classifier.pkl --metrics metrics/classification.json
+    deps:
+      - src/train_classification.py
+      - data/processed/features.parquet
+      - params.yaml
+    outs:
+      - models/classifier.pkl
+    metrics:
+      - metrics/classification.json
+
+  evaluate:
+    cmd: python -m src.evaluate --data data/processed/features.parquet --reg models/regression.pkl --clf models/classifier.pkl --out metrics/summary.json --figdir reports/figures
+    deps:
+      - src/evaluate.py
+      - models/regression.pkl
+      - models/classifier.pkl
+      - data/processed/features.parquet
+      - params.yaml
+    metrics:
+      - metrics/summary.json
+    plots:
+      - reports/figures/regression_residuals.png:
+          cache: false
+      - reports/figures/classification_roc.png:
+          cache: false
